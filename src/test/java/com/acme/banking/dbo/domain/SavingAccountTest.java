@@ -8,32 +8,59 @@ import static org.junit.jupiter.api.Assertions.*;
 class SavingAccountTest {
 
     @Test
-    public void shouldCreateNewAccountWhenParametersAreCorrect() {
+    public void shouldCreateNewAccountWhenParametersAreValid() {
         Client stubClient = stubClient();
 
-        SavingAccount sut = new SavingAccount(TEST_ACCOUNT_ID, stubClient, TEST_AMOUNT);
+        SavingAccount sut = new SavingAccount(TEST_VALID_ACCOUNT_ID, stubClient, TEST_VALID_AMOUNT);
 
-        assertNotNull(sut);
-        assertEquals(TEST_AMOUNT, sut.getAmount());
+        assertEquals(TEST_VALID_AMOUNT, sut.getAmount());
         assertEquals(stubClient, sut.getClient());
-        assertEquals(TEST_ACCOUNT_ID, sut.getId());
+        assertEquals(TEST_VALID_ACCOUNT_ID, sut.getId());
+    }
+
+    @Test
+    public void shouldCreateNewAccountWhenIdIsZero() {
+        Client stubClient = stubClient();
+
+        SavingAccount sut = new SavingAccount(0, stubClient, TEST_VALID_AMOUNT);
+
+        assertEquals(0, sut.getId());
+        assertEquals(stubClient, sut.getClient());
+        assertEquals(TEST_VALID_ACCOUNT_ID, sut.getAmount());
+    }
+
+    @Test
+    public void shouldCreateNewAccountWhenAmountIsZero() {
+        Client stubClient = stubClient();
+
+        SavingAccount sut = new SavingAccount(TEST_VALID_ACCOUNT_ID, stubClient, 0.0);
+
+        assertEquals(0.0, sut.getAmount());
+        assertEquals(stubClient, sut.getClient());
+        assertEquals(TEST_VALID_ACCOUNT_ID, sut.getId());
     }
 
     @Test
     public void shouldThrowExceptionWhenAccountIdIsNegative() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new SavingAccount(-1, stubClient(), TEST_AMOUNT));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> new SavingAccount(-1, stubClient(), TEST_VALID_AMOUNT));
+
+        assertEquals("Id cannot be negative", thrown.getMessage());
     }
 
     @Test
     public void shouldThrowExceptionWhenClientIsNull() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new SavingAccount(TEST_ACCOUNT_ID, null, TEST_AMOUNT));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> new SavingAccount(TEST_VALID_ACCOUNT_ID, null, TEST_VALID_AMOUNT));
+
+        assertEquals("Client cannot be null", thrown.getMessage());
     }
 
     @Test
     public void shouldThrowExceptionWhenAmountIsNegative() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new SavingAccount(TEST_ACCOUNT_ID, stubClient(), -5.0));
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> new SavingAccount(TEST_VALID_ACCOUNT_ID, stubClient(), -1.0));
+
+        assertEquals("Amount cannot be negative", thrown.getMessage());
     }
 }
