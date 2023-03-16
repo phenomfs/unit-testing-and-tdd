@@ -1,52 +1,79 @@
 package com.acme.banking.dbo;
 
+import com.acme.banking.dbo.domain.Account;
 import com.acme.banking.dbo.domain.Client;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import static com.acme.banking.dbo.TestData.TEST_VALID_CLIENT_ID;
-import static com.acme.banking.dbo.TestData.TEST_VALID_CLIENT_NAME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static com.acme.banking.dbo.TestData.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ClientTest {
 
-    @Test
-    public void shouldCreateNewClientWhenParametersAreValid() {
-        Client sut = new Client(TEST_VALID_CLIENT_ID, TEST_VALID_CLIENT_NAME);
+    @ParameterizedTest
+    @ValueSource(ints = {0, VALID_POSITIVE_CLIENT_ID})
+    public void shouldCreateNewClientWhenParametersAreValid(int validId) {
+        Client sut = new Client(validId, VALID_CLIENT_NAME);
 
-        assertEquals(TEST_VALID_CLIENT_ID, sut.getId());
-        assertEquals(TEST_VALID_CLIENT_NAME, sut.getName());
+        assertAll(
+                () -> assertEquals(validId, sut.getId()),
+                () -> assertEquals(VALID_CLIENT_NAME, sut.getName())
+        );
     }
 
     @Test
     public void shouldThrowExceptionWhenIdIsNegative() {
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                () -> new Client(-1, TEST_VALID_CLIENT_NAME));
+        assertThatThrownBy(() -> new Client(-1, VALID_CLIENT_NAME))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Id cannot be negative");
+    }
 
-        assertEquals("Id cannot be negative", thrown.getMessage());
+    @ParameterizedTest
+    @NullAndEmptySource
+    public void shouldThrowExceptionWhenNameIsNotValid(String notValidName) {
+        assertThatThrownBy(() -> new Client(VALID_POSITIVE_CLIENT_ID, notValidName))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Name cannot be null or empty");
     }
 
     @Test
-    public void shouldCreateNewClientWhenIdIsZero() {
-        Client sut = new Client(0, TEST_VALID_CLIENT_NAME);
+    public void shouldSuccessfullyLinkAccountWhenItBelongsToGivenClient() {
+        Client sut = new Client(VALID_POSITIVE_CLIENT_ID, VALID_CLIENT_NAME);
+        Account account = stubAccount(sut);
 
-        assertEquals(0, sut.getId());
-        assertEquals(TEST_VALID_CLIENT_NAME, sut.getName());
+        sut.addAccount(account);
+
+        assertTrue(sut.getAccounts().contains(account));
     }
 
     @Test
-    public void shouldThrowExceptionWhenNameIsEmpty() {
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                () -> new Client(TEST_VALID_CLIENT_ID, ""));
+    public void shouldThrowExceptionWhileLinkingAccountWhenItNotBelongsToGivenClient() {
+        Client sut = new Client(VALID_POSITIVE_CLIENT_ID, VALID_CLIENT_NAME);
 
-        assertEquals("Name cannot be null or empty", thrown.getMessage());
+        Client stubClient = stubClient();
+        Account account = stubAccount(stubClient);
+
+
+        assertAll(
+                () -> assertThatThrownBy(() -> sut.addAccount(account))
+                        .isInstanceOf(IllegalStateException.class)
+                        .hasMessage("Account doesn't belong to client with id " + stubClient.getId()),
+                () -> assertFalse(sut.getAccounts().contains(account))
+        );
     }
 
     @Test
-    public void shouldThrowExceptionWhenNameIsNull() {
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                () -> new Client(TEST_VALID_CLIENT_ID, null));
+    public void shouldThrowExceptionWhileLinkingAccountWhenItIsNull() {
+        Client sut = new Client(VALID_POSITIVE_CLIENT_ID, VALID_CLIENT_NAME);
 
-        assertEquals("Name cannot be null or empty", thrown.getMessage());
+        assertAll(
+                () -> assertThatThrownBy(() -> sut.addAccount(null))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("Account cannot be null"),
+                () -> assertTrue(sut.getAccounts().isEmpty())
+        );
     }
 }

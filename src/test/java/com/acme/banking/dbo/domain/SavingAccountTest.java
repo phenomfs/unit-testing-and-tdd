@@ -1,66 +1,58 @@
 package com.acme.banking.dbo.domain;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static com.acme.banking.dbo.TestData.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SavingAccountTest {
 
-    @Test
-    public void shouldCreateNewAccountWhenParametersAreValid() {
+    public static Stream<Arguments> validAccountParametersSource() {
+        return Stream.of(
+                Arguments.of(0, 0.0),
+                Arguments.of(VALID_POSITIVE_ACCOUNT_ID, VALID_POSITIVE_AMOUNT)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource(value = "validAccountParametersSource")
+    public void shouldCreateNewAccountWhenParametersAreValid(int validAccountId, double validAmount) {
         Client stubClient = stubClient();
 
-        SavingAccount sut = new SavingAccount(TEST_VALID_ACCOUNT_ID, stubClient, TEST_VALID_AMOUNT);
+        SavingAccount sut = new SavingAccount(validAccountId, stubClient, validAmount);
 
-        assertEquals(TEST_VALID_AMOUNT, sut.getAmount());
-        assertEquals(stubClient, sut.getClient());
-        assertEquals(TEST_VALID_ACCOUNT_ID, sut.getId());
-    }
-
-    @Test
-    public void shouldCreateNewAccountWhenIdIsZero() {
-        Client stubClient = stubClient();
-
-        SavingAccount sut = new SavingAccount(0, stubClient, TEST_VALID_AMOUNT);
-
-        assertEquals(0, sut.getId());
-        assertEquals(stubClient, sut.getClient());
-        assertEquals(TEST_VALID_ACCOUNT_ID, sut.getAmount());
-    }
-
-    @Test
-    public void shouldCreateNewAccountWhenAmountIsZero() {
-        Client stubClient = stubClient();
-
-        SavingAccount sut = new SavingAccount(TEST_VALID_ACCOUNT_ID, stubClient, 0.0);
-
-        assertEquals(0.0, sut.getAmount());
-        assertEquals(stubClient, sut.getClient());
-        assertEquals(TEST_VALID_ACCOUNT_ID, sut.getId());
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenAccountIdIsNegative() {
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                () -> new SavingAccount(-1, stubClient(), TEST_VALID_AMOUNT));
-
-        assertEquals("Id cannot be negative", thrown.getMessage());
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenClientIsNull() {
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                () -> new SavingAccount(TEST_VALID_ACCOUNT_ID, null, TEST_VALID_AMOUNT));
-
-        assertEquals("Client cannot be null", thrown.getMessage());
+        assertAll(
+                () -> assertEquals(validAccountId, sut.getId()),
+                () -> assertEquals(stubClient, sut.getClient()),
+                () -> assertEquals(validAmount, sut.getAmount())
+        );
     }
 
     @Test
     public void shouldThrowExceptionWhenAmountIsNegative() {
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                () -> new SavingAccount(TEST_VALID_ACCOUNT_ID, stubClient(), -1.0));
+        assertThatThrownBy(() -> new SavingAccount(VALID_POSITIVE_ACCOUNT_ID, stubClient(), -1.0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Amount cannot be negative");
+    }
 
-        assertEquals("Amount cannot be negative", thrown.getMessage());
+    @Test
+    public void shouldThrowExceptionWhenAccountIdIsNegative() {
+        assertThatThrownBy(() -> new SavingAccount(-1, stubClient(), VALID_POSITIVE_AMOUNT))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Id cannot be negative");
+    }
+
+    @Test
+    public void shouldThrowExceptionWhenClientIsNull() {
+        assertThatThrownBy(() -> new SavingAccount(VALID_POSITIVE_ACCOUNT_ID, null, VALID_POSITIVE_AMOUNT))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Client cannot be null");
     }
 }
