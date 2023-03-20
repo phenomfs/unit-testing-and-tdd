@@ -29,4 +29,19 @@ public class SavingAccount implements Account {
     public Client getClient() {
         return client;
     }
+
+    @Override
+    public void withdraw(double amount) {
+        if (amount <= 0) throw new IllegalArgumentException("Amount should be positive");
+        if (this.amount < amount) throw new IllegalStateException("Not enough money");
+
+        this.amount -= amount;
+    }
+
+    @Override
+    public void deposit(double amount) {
+        if (amount <= 0) throw new IllegalArgumentException("Amount should be positive");
+
+        this.amount += amount;
+    }
 }
